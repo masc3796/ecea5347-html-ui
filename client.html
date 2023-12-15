@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+  <head>
+    <title>HTML Prototype UI</title>
+    <meta charset="utf-8" />
+    <style type="text/css">
+      body {
+        text-align: center;
+        min-width: 500px;
+      }
+    </style>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script>
+      
+    var ws;    
+    var intentional_close = false;  
+
+      $(document).ready(function () {
+ 
+
+
+        $("#open").click(function(evt)  {
+          evt.preventDefault();
+ 
+          //var host = $("#host").val();
+          //var port = $("#port").val();
+        //var uri = $("#uri").val();          
+          var host = "localhost";
+          var port = "8888";
+          var uri = "/ws";
+ 
+ 
+          if ((ws == null)  || (typeof(ws) == 'object' && ws.readyState == ws.CLOSED)) {
+             // create websocket instance
+              intentional_close = false;
+              ws = new WebSocket("ws://" + host + ":" + port + uri);
+          }
+          else {
+            intentional_close = true;
+            ws.close();
+            }
+           
+          // Handle incoming websocket message callback
+          ws.onmessage = function(evt) {
+            msg = evt.data.split(",")
+            
+            if (msg[0].toLowerCase() == "read_single") {
+                $("#current_temp").val(parseFloat(msg[1]).toFixed(2));
+                $("#current_humidity").val(parseFloat(msg[2]).toFixed(2));                
+                $("#status").val("Read Single\n\nTemp Alarm: "+msg[3]+"\nHumidity Alarm: "+msg[4]);
+                console.log(msg[3]);
+                
+                if (msg[3].includes("True") || msg[4].includes("True")) {
+                    $("#status").css("background-color", "yellow");
+                } else {
+                    $("#status").css("background-color", "green");                    
+                }
+            }
+            
+            if (msg[0].toLowerCase() == "read_10x") {
+                $("#current_temp").val(parseFloat(msg[2]).toFixed(2));
+                $("#current_humidity").val(parseFloat(msg[3]).toFixed(2));                
+                $("#status").val("Read_10x #"+msg[1]+"\n\nTemp Alarm: "+msg[4]+"\nHumidity Alarm: "+msg[5]);
+                console.log(msg[3]);
+                
+                if (msg[3].includes("True") || msg[5].includes("True")) {
+                    $("#status").css("background-color", "yellow");
+                } else {
+                    $("#status").css("background-color", "green");                    
+                }
+                
+                if (msg[6].includes("done")) {
+                    var x = $("#status").val()
+                    $("#status").val(x + "\n\nCOMPLETE");
+                } else {
+                    var x = $("#status").val()
+                    $("#status").val(x + "\n\nONGOING");
+                }                
+            }
+            
+            if (msg[0].toLowerCase() == "calculate_statistics") {
+                $("#status").val("Statistics\n\nTemp Min: "+msg[1]+"\nTemp Max: "+msg[2]+"\nTemp Avg: "+msg[3]+"\n\nHumidity Min: "+msg[4]+"\nHumidity Max: "+msg[5]+"\nHumidity Avg: "+msg[6]);
+            }
+            
+            
+            
+            
+            };
+ 
+          // Close Websocket callback
+          ws.onclose = function(evt) {
+          
+            $("#open").val("Open Connection");          
+            if (intentional_close) {
+                $("#status").val("Connection Closed.");
+                $("#status").css("background-color", "yellow");                       
+                }
+            else {
+                $("#status").val("Socket Error.");                
+                $("#status").css("background-color", "red");       
+            }                    
+                 
+            
+                   
+            };
+            
+          // Open Websocket callback
+          ws.onopen = function(evt) { 
+            $("#status").val("Connection Opened.")
+            $("#status").css("background-color", "green");            
+            $("#open").val("Close Connection");                     
+            };
+        });
+
+        //Read Single Callback
+        $("#read_single").click(function(evt) {
+            ws.send("read_single," + $("#temperature_alarm").val() + "," +$("#humidity_alarm").val() );
+        });
+        
+        //Read 10x Callback
+        $("#read_10x").click(function(evt) {
+            ws.send("read_10x," + $("#temperature_alarm").val() + "," + $("#humidity_alarm").val() );
+        });      
+        
+        //Calculate Stats Callback
+        $("#calculate_statistics").click(function(evt) {
+            ws.send("calculate_statistics");
+        });        
+ 
+      });
+    </script>
+  </head>
+ 
+  <body>
+    <h1>Sensor UI (HTML)</h1>
+    <div id="connection_details">
+
+      <input type="submit" id="open" value="Open Connection" /><br/><br/>
+      
+      <label for="current_temp">Current Temp:</label>
+      <input type="text" id="current_temp" value="0.0"/><br />
+      
+      <label for="current_humidity">Current Humidity:</label>
+      <input type="text" id="current_humidity" value="0.0"/><br /><br/>
+      
+      
+      <label for="temperature_alarm">Temperature Alarm:</label>
+      <input type="text" id="temperature_alarm" value="100.0"/><br />
+      
+      <label for="humidity_alarm">Humidity Alarm:</label>
+      <input type="text" id="humidity_alarm" value="50.0"/><br /><br/>
+      
+      <input type="submit" id="read_single" value="Read Single" /> <br/>
+      <input type="submit" id="read_10x" value="Read 10x" /><br/>
+      <input type="submit" id="calculate_statistics" value="Calculate Statistics" /><br/><br/>
+      
+      <label for="status">Status:</label>
+      <textarea id="status" cols="50" rows="10"></textarea>
+     
+      
+      
+
+    </div>
+
+  </body>
+</html>
