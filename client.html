@@ -125,7 +125,12 @@
         //Calculate Stats Callback
         $("#calculate_statistics").click(function(evt) {
             ws.send("calculate_statistics");
-        });        
+        });    
+
+        $("#close_ui").click(function(evt) {
+            window.close();
+        });
+            
  
       });
     </script>
@@ -158,6 +163,7 @@
       <textarea id="status" cols="50" rows="10"></textarea>
      
       
+        <input type="submit" id="close_ui" value="Close UI" /><br/>
       
 
     </div>
